@@ -175,9 +175,11 @@ impl WritingMode {
             },
         }
 
-        #[cfg(feature = "gecko")]
         {
+            #[cfg(feature = "gecko")]
             use crate::properties::longhands::text_orientation::computed_value::T as TextOrientation;
+            #[cfg(not(feature = "gecko"))]
+            use crate::computed_values::text_orientation::T as TextOrientation;
 
             // text-orientation only has an effect for vertical-rl and
             // vertical-lr values of writing-mode.
