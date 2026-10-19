@@ -338,7 +338,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     ///
     /// FIXME(emilio): How does this play with logical properties? Doesn't
     /// mutating writing-mode change the potential physical sides chosen?
-    #[cfg(feature = "gecko")]
     fn adjust_for_text_combine_upright(&mut self) {
         use crate::computed_values::text_combine_upright::T as TextCombineUpright;
         use crate::computed_values::writing_mode::T as WritingMode;
@@ -347,17 +346,43 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         let writing_mode = self.style.get_inherited_box().clone_writing_mode();
         let text_combine_upright = self.style.get_inherited_text().clone_text_combine_upright();
 
-        if matches!(
+        if !matches!(
             writing_mode,
             WritingMode::VerticalRl | WritingMode::VerticalLr
-        ) && text_combine_upright == TextCombineUpright::All
+        ) || text_combine_upright != TextCombineUpright::All
         {
-            self.style.add_flags(ComputedValueFlags::IS_TEXT_COMBINED);
+            return;
+        }
+
+        self.style.add_flags(ComputedValueFlags::IS_TEXT_COMBINED);
+        self.style
+            .mutate_inherited_box()
+            .set_writing_mode(WritingMode::HorizontalTb);
+        self.style.writing_mode =
+            logical_geometry::WritingMode::new(self.style.get_inherited_box());
+
+        // CSS Writing Modes 3 §9.1.2: the composition is "assumed to be 1em
+        // square" and is set "similar to the contents of an inline-block box
+        // with a horizontal writing mode and a line-height of 1em". Gecko has
+        // separate text-frame machinery for that; this build does not, so the
+        // element itself becomes that inline-block — a one-em square whose
+        // contents are laid out horizontally, which also makes it occupy a
+        // single em along the vertical line as §9.1 requires.
+        #[cfg(not(feature = "gecko"))]
+        {
+            use crate::values::computed::{LengthPercentage, LineHeight, Size};
+            use crate::values::generics::NonNegative;
+
+            let font_size = self.style.get_font().clone_font_size().computed_size.0;
+            let one_em =
+                Size::LengthPercentage(NonNegative(LengthPercentage::new_length(font_size)));
+            self.style.mutate_box().set_display(Display::InlineBlock);
+            let pos = self.style.mutate_position();
+            pos.set_width(one_em.clone());
+            pos.set_height(one_em);
             self.style
-                .mutate_inherited_box()
-                .set_writing_mode(WritingMode::HorizontalTb);
-            self.style.writing_mode =
-                logical_geometry::WritingMode::new(self.style.get_inherited_box());
+                .mutate_font()
+                .set_line_height(LineHeight::Number(1.0.into()));
         }
     }
 
@@ -1053,6 +1078,12 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         // );
 
         self.adjust_for_visited(element);
+        // Gecko applies this from `adjust_for_text`, which only exists for its
+        // anonymous text frames. Blitz has no such frames — the element carrying
+        // the combined text is the one that needs the adjustment — so it runs on
+        // the element here instead.
+        #[cfg(not(feature = "gecko"))]
+        self.adjust_for_text_combine_upright();
         #[cfg(feature = "gecko")]
         {
             self.adjust_for_prohibited_display_contents(element);
