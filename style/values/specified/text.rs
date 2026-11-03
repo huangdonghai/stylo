@@ -1087,11 +1087,9 @@ fn parse_inset_endpoint(
     ctx: &ParserContext,
     input: &mut Parser,
 ) -> Result<LengthPercentage, ParseError> {
-    if !crate::pref!("layout.css.text-decoration-inset-percentage.enabled") {
-        Length::parse(ctx, input).map(|l| l.into())
-    } else {
-        LengthPercentage::parse(ctx, input)
-    }
+    // A percentage inset resolves against the length of the decoration, which only the layout
+    // knows, so it has to survive parsing as a percentage (CSS Text Decoration 4 2.3).
+    LengthPercentage::parse(ctx, input)
 }
 
 impl Parse for TextDecorationInset {
