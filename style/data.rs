@@ -337,6 +337,23 @@ impl ElementDataWrapper {
         }
     }
 
+    /// Gets a non-exclusive reference to this ElementData, or `None` when an exclusive one is
+    /// already live.
+    ///
+    /// Selector matching asks an element whether it *is* a pseudo-element by reading the style
+    /// already computed on it, and a restyle holds that very style exclusively while it matches
+    /// selectors: asking is not worth a panic, so the caller is told the answer is not available.
+    #[inline(always)]
+    pub fn try_borrow(&self) -> Option<ElementDataRef<'_>> {
+        #[cfg(debug_assertions)]
+        let borrow = self.refcell.try_borrow().ok()?;
+        Some(ElementDataRef {
+            v: unsafe { &*self.inner.get() },
+            #[cfg(debug_assertions)]
+            _borrow: borrow,
+        })
+    }
+
     /// Gets an exclusive reference to this ElementData.
     #[inline(always)]
     pub fn borrow_mut(&self) -> ElementDataMut<'_> {
