@@ -1139,7 +1139,8 @@ allow_quirks = true
 parse_method = "parse_size_for_width_or_height"
 flags = "SCROLL_LINKED_EFFECTIVE"
 spec = "https://drafts.csswg.org/css-box/#propdef-height"
-rule_types_allowed = ["style", "keyframe", "scope", "position-try"]
+# See `width` above: a page rule's `height` is the height of the page area.
+rule_types_allowed = ["style", "keyframe", "scope", "position-try", "page"]
 servo_restyle_damage = "rebuild_box"
 affects = "layout"
 
@@ -2476,7 +2477,10 @@ allow_quirks = true
 parse_method = "parse_size_for_width_or_height"
 flags = "SCROLL_LINKED_EFFECTIVE"
 spec = "https://drafts.csswg.org/css-box/#propdef-width"
-rule_types_allowed = ["style", "keyframe", "scope", "position-try"]
+# A page rule's `width` is what Blink takes as the width of the page area, with the page margin
+# growing the paper around it; `page-size-013/014-print` assert it, and `page_box` in blitz-dom's
+# fragmentation reads it.
+rule_types_allowed = ["style", "keyframe", "scope", "position-try", "page"]
 servo_restyle_damage = "rebuild_box"
 affects = "layout"
 
