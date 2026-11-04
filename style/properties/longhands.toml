@@ -490,6 +490,22 @@ spec = "https://drafts.csswg.org/css-break/#propdef-break-before"
 animation_type = "discrete"
 affects = "layout"
 
+[orphans]
+type = "Integer"
+initial = "2"
+struct = "inherited_text"
+parse_method = "parse_positive"
+spec = "https://drafts.csswg.org/css-break/#propdef-orphans"
+affects = "layout"
+
+[widows]
+type = "Integer"
+initial = "2"
+struct = "inherited_text"
+parse_method = "parse_positive"
+spec = "https://drafts.csswg.org/css-break/#propdef-widows"
+affects = "layout"
+
 [break-inside]
 type = "BreakWithin"
 initial = "computed::BreakWithin::Auto"
@@ -1963,7 +1979,6 @@ affects = "layout"
 type = "PageSize"
 initial = "computed::PageSize::auto()"
 struct = "page"
-engine = "gecko"
 spec = "https://drafts.csswg.org/css-page-3/#page-size-prop"
 animation_type = "none"
 rule_types_allowed = ["page"]
