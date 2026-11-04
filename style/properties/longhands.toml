@@ -3766,7 +3766,6 @@ keyword = { values = ["inline", "block", "horizontal", "vertical"] }
 
 [column-fill]
 struct = "column"
-engine = "gecko"
 spec = "https://drafts.csswg.org/css-multicol/#propdef-column-fill"
 animation_type = "discrete"
 affects = "layout"
