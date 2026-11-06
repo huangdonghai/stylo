@@ -15,7 +15,7 @@ use crate::values::generics::text::{
     GenericTextDecorationLength, GenericTextIndent,
 };
 use crate::values::generics::NumberOrAuto;
-use crate::values::specified::length::{Length, LengthPercentage};
+use crate::values::specified::length::LengthPercentage;
 use crate::values::specified::{AllowQuirks, Integer, Number};
 use crate::Zero;
 use cssparser::Parser;
