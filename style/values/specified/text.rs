@@ -1332,6 +1332,177 @@ bitflags! {
     }
 }
 
+/// Specified value for the `text-spacing-trim` property.
+///
+/// (The spec grammar gives
+/// `auto | trim-all | [ trim-start | space-start | space-first ] ||
+/// [ trim-adjacent | space-adjacent ] || [ trim-end | space-end | allow-end ]`,
+/// with `normal` (= `space-start trim-adjacent allow-end`), `space-all` and
+/// `trim-both` as additional single-keyword values.)
+/// https://drafts.csswg.org/css-text-4/#text-spacing-trim-property
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[css(bitflags(
+    single = "auto,trim-all,space-all,trim-both,normal",
+    mixed = "trim-start,space-start,space-first,trim-adjacent,space-adjacent,trim-end,space-end,allow-end",
+    validate_mixed = "Self::validate_mixed_flags",
+))]
+#[repr(C)]
+pub struct TextSpacingTrim(u16);
+bitflags! {
+    impl TextSpacingTrim: u16 {
+        /// The user agent chooses a high-quality spacing policy.
+        const AUTO = 1 << 0;
+        /// Trim all opening, closing, and middle-dot punctuation.
+        const TRIM_ALL = 1 << 1;
+        /// Keep all punctuation full-width (`space-start space-adjacent space-end`).
+        const SPACE_ALL = 1 << 2;
+        /// Trim both line edges and collapse adjacent pairs
+        /// (`trim-start trim-adjacent trim-end`).
+        const TRIM_BOTH = 1 << 3;
+        /// Spaced at line start, collapsed between pairs, trimmed at line end
+        /// when needed (`space-start trim-adjacent allow-end`).
+        const NORMAL = 1 << 4;
+
+        /// Set opening punctuation half-width at line start (flush).
+        const TRIM_START = 1 << 5;
+        /// Set opening punctuation full-width at line start (spaced).
+        const SPACE_START = 1 << 6;
+        /// Full-width on the first line, otherwise as `space-start`.
+        const SPACE_FIRST = 1 << 7;
+        /// Collapse spacing between punctuation glyphs.
+        const TRIM_ADJACENT = 1 << 8;
+        /// Set punctuation full-width when not at a line edge.
+        const SPACE_ADJACENT = 1 << 9;
+        /// Set closing punctuation half-width at line end (flush).
+        const TRIM_END = 1 << 10;
+        /// Set closing punctuation full-width at line end (spaced).
+        const SPACE_END = 1 << 11;
+        /// Half-width at line end only when the full-width glyph does not fit.
+        const ALLOW_END = 1 << 12;
+
+        /// The start-of-line group.
+        const START_GROUP = Self::TRIM_START.0 | Self::SPACE_START.0 | Self::SPACE_FIRST.0;
+        /// The adjacent group.
+        const ADJACENT_GROUP = Self::TRIM_ADJACENT.0 | Self::SPACE_ADJACENT.0;
+        /// The end-of-line group.
+        const END_GROUP = Self::TRIM_END.0 | Self::SPACE_END.0 | Self::ALLOW_END.0;
+
+        /// The computed initial value: `normal` expanded to its per-position keywords.
+        const INITIAL = Self::SPACE_START.0 | Self::TRIM_ADJACENT.0 | Self::ALLOW_END.0;
+    }
+}
+
+impl Default for TextSpacingTrim {
+    fn default() -> Self {
+        Self::INITIAL
+    }
+}
+
+impl TextSpacingTrim {
+    fn validate_mixed_flags(&self) -> bool {
+        [Self::START_GROUP, Self::ADJACENT_GROUP, Self::END_GROUP]
+            .iter()
+            .all(|group| self.intersection(*group).bits().count_ones() <= 1)
+    }
+
+    fn expanded(&self) -> Self {
+        if self.contains(Self::AUTO) {
+            return Self::AUTO;
+        }
+        if self.contains(Self::TRIM_ALL) {
+            return Self::TRIM_ALL;
+        }
+        let (start, adjacent, end) = if self.contains(Self::NORMAL) {
+            (Self::SPACE_START, Self::TRIM_ADJACENT, Self::ALLOW_END)
+        } else if self.contains(Self::SPACE_ALL) {
+            (Self::SPACE_START, Self::SPACE_ADJACENT, Self::SPACE_END)
+        } else if self.contains(Self::TRIM_BOTH) {
+            (Self::TRIM_START, Self::TRIM_ADJACENT, Self::TRIM_END)
+        } else {
+            (
+                if self.intersects(Self::START_GROUP) { Self::empty() } else { Self::TRIM_START },
+                if self.intersects(Self::ADJACENT_GROUP) { Self::empty() } else { Self::TRIM_ADJACENT },
+                if self.intersects(Self::END_GROUP) { Self::empty() } else { Self::ALLOW_END },
+            )
+        };
+        let from_triplet = start | adjacent | end;
+        if self.contains(Self::NORMAL) || self.contains(Self::SPACE_ALL) || self.contains(Self::TRIM_BOTH) {
+            from_triplet
+        } else {
+            *self | from_triplet
+        }
+    }
+}
+
+impl ToComputedValue for TextSpacingTrim {
+    type ComputedValue = Self;
+
+    #[inline]
+    fn to_computed_value(&self, _context: &Context) -> Self::ComputedValue {
+        self.expanded()
+    }
+
+    #[inline]
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        *computed
+    }
+}
+
+impl ToCss for TextSpacingTrim {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        if self.contains(Self::AUTO) {
+            return dest.write_str("auto");
+        }
+        if self.contains(Self::TRIM_ALL) {
+            return dest.write_str("trim-all");
+        }
+        if self.contains(Self::NORMAL) {
+            return dest.write_str("normal");
+        }
+        if self.contains(Self::SPACE_ALL) {
+            return dest.write_str("space-all");
+        }
+        if self.contains(Self::TRIM_BOTH) {
+            return dest.write_str("trim-both");
+        }
+
+        let mut writer = SequenceWriter::new(dest, " ");
+        macro_rules! maybe_write {
+            ($ident:ident => $str:expr) => {
+                if self.contains(TextSpacingTrim::$ident) {
+                    writer.raw_item($str)?;
+                }
+            };
+        }
+        maybe_write!(TRIM_START => "trim-start");
+        maybe_write!(SPACE_START => "space-start");
+        maybe_write!(SPACE_FIRST => "space-first");
+        maybe_write!(TRIM_ADJACENT => "trim-adjacent");
+        maybe_write!(SPACE_ADJACENT => "space-adjacent");
+        maybe_write!(TRIM_END => "trim-end");
+        maybe_write!(SPACE_END => "space-end");
+        maybe_write!(ALLOW_END => "allow-end");
+        Ok(())
+    }
+}
+
 /* Bug 1980111: Uncomment the following to support 'replace' value.
 impl TextAutospace {
     fn validate_mixed_flags(&self) -> bool {

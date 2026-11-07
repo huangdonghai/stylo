@@ -2612,6 +2612,15 @@ has_effect_on_gecko_scrollbars = false
 spec = "https://drafts.csswg.org/css-text-4/#text-autospace-property"
 affects = "layout"
 
+[text-spacing-trim]
+type = "TextSpacingTrim"
+initial = "computed::text::TextSpacingTrim::INITIAL"
+struct = "inherited_text"
+animation_type = "discrete"
+spec = "https://drafts.csswg.org/css-text-4/#text-spacing-trim-property"
+servo_restyle_damage = "rebuild_box"
+affects = "layout"
+
 [text-box-edge]
 type = "TextBoxEdge"
 initial = "computed::TextBoxEdge::Auto"
