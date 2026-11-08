@@ -370,7 +370,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         // single em along the vertical line as §9.1 requires.
         #[cfg(not(feature = "gecko"))]
         {
-            use crate::values::computed::{LengthPercentage, LineHeight, Size};
+            use crate::values::computed::{LengthPercentage, LineHeight, Size, TextAlign};
             use crate::values::generics::NonNegative;
 
             let font_size = self.style.get_font().clone_font_size().computed_size.0;
@@ -383,6 +383,18 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             self.style
                 .mutate_font()
                 .set_line_height(LineHeight::Number(1.0.into()));
+            // The composition is a one-em square, not a block container whose
+            // first line takes the parent's indentation. `text-indent`
+            // inherits, so leaving it in place shifts the combined glyph
+            // sideways inside the square; browsers lay the composition out as
+            // an inline run and never apply it.
+            self.style
+                .set_text_indent(crate::values::computed::TextIndent::zero());
+            // §9.1.2: the contents are centred in the one-em square. The
+            // parent's `text-align` (often `justify`) does not say where the
+            // composition itself sits, and a single digit must not be left
+            // against the square's edge.
+            self.style.set_text_align(TextAlign::Center);
         }
     }
 
