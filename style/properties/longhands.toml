@@ -2605,10 +2605,7 @@ affects = "layout"
 type = "TextAutospace"
 initial = "computed::text::TextAutospace::NO_AUTOSPACE"
 struct = "inherited_text"
-engine = "gecko"
 animation_type = "discrete"
-gecko_pref = "layout.css.text-autospace.enabled"
-has_effect_on_gecko_scrollbars = false
 spec = "https://drafts.csswg.org/css-text-4/#text-autospace-property"
 affects = "layout"
 
