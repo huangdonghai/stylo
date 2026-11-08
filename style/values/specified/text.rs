@@ -1345,7 +1345,6 @@ bitflags! {
     Copy,
     Debug,
     Eq,
-    Hash,
     MallocSizeOf,
     Parse,
     PartialEq,
@@ -1511,6 +1510,55 @@ impl TextAutospace {
     }
 }
 */
+/// Specified value for the `hanging-punctuation` property.
+///
+/// (`none | [first || last || allow-end || force-end]`)
+/// https://drafts.csswg.org/css-text-3/#hanging-punctuation-property
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[css(bitflags(
+    single = "none",
+    mixed = "first,last,allow-end,force-end",
+    validate_mixed = "Self::validate_mixed_flags",
+))]
+#[repr(C)]
+pub struct HangingPunctuation(u8);
+bitflags! {
+    impl HangingPunctuation: u8 {
+        /// No punctuation hangs.
+        const NONE = 0;
+        /// Opening punctuation hangs at the start of the first line.
+        const FIRST = 1 << 0;
+        /// Closing punctuation hangs at the end of the last formatted line.
+        const LAST = 1 << 1;
+        /// A stop or comma that would overflow hangs at the end of a line.
+        const ALLOW_END = 1 << 2;
+        /// A stop or comma hangs at the end of a line.
+        const FORCE_END = 1 << 3;
+    }
+}
+
+impl HangingPunctuation {
+    fn validate_mixed_flags(&self) -> bool {
+        !(self.contains(Self::ALLOW_END) && self.contains(Self::FORCE_END))
+    }
+}
+
 #[derive(
     Clone,
     Copy,

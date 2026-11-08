@@ -677,6 +677,7 @@ class Longhand(Property):
                 "MarginTrim",
                 "MasonryAutoFlow",
                 "MozTheme",
+                "HangingPunctuation",
                 "BoolInteger",
                 "text::MozControlCharacterVisibility",
                 "MozScriptMinSize",
