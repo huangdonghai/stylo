@@ -4006,6 +4006,14 @@ servo_pref = "layout.unimplemented"
 affects = "layout"
 keyword = { values = ["none", "all"] }
 
+[-hutu-note-placement]
+struct = "box"
+spec = "None (internal)"
+animation_type = "none"
+servo_restyle_damage = "rebuild_box"
+affects = "layout"
+keyword = { values = ["none", "inline", "interline", "margin"] }
+
 [text-rendering]
 struct = "inherited_text"
 spec = "https://svgwg.org/svg2-draft/painting.html#TextRenderingProperty"
