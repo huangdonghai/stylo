@@ -4014,6 +4014,14 @@ servo_restyle_damage = "rebuild_box"
 affects = "layout"
 keyword = { values = ["none", "inline", "interline", "margin"] }
 
+[-hutu-note-side]
+struct = "box"
+spec = "None (internal)"
+animation_type = "none"
+servo_restyle_damage = "rebuild_box"
+affects = "layout"
+keyword = { values = ["auto", "inline-start", "inline-end"] }
+
 [text-rendering]
 struct = "inherited_text"
 spec = "https://svgwg.org/svg2-draft/painting.html#TextRenderingProperty"
