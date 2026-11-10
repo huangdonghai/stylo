@@ -2003,6 +2003,10 @@ pub enum BreakBetween {
     Avoid,
     Left,
     Right,
+    Column,
+    AvoidColumn,
+    Region,
+    AvoidRegion,
 }
 
 impl BreakBetween {
@@ -2019,6 +2023,12 @@ impl BreakBetween {
                 Ok(break_value)
             },
             BreakBetween::Page => Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError)),
+            BreakBetween::Column
+            | BreakBetween::AvoidColumn
+            | BreakBetween::Region
+            | BreakBetween::AvoidRegion => {
+                Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError))
+            },
         }
     }
 
@@ -2036,6 +2046,10 @@ impl BreakBetween {
             },
             BreakBetween::Page => dest.write_str("always"),
             BreakBetween::Always => Ok(()),
+            BreakBetween::Column
+            | BreakBetween::AvoidColumn
+            | BreakBetween::Region
+            | BreakBetween::AvoidRegion => Err(fmt::Error),
         }
     }
 }
