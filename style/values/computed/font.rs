@@ -4,9 +4,11 @@
 
 //! Computed values for font properties
 
+use crate::Atom;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::typed_om::{ToTyped, TypedValue};
+use crate::values::CSSInteger;
 use crate::values::animated::ToAnimatedValue;
 use crate::values::computed::{
     Angle, Context, Integer, Length, NonNegativeLength, NonNegativeNumber, Number, Percentage,
@@ -15,15 +17,13 @@ use crate::values::computed::{
 use crate::values::generics::font::{
     FeatureTagValue, FontSettings, TaggedFontValue, VariationValue,
 };
-use crate::values::generics::{font as generics, NonNegative};
+use crate::values::generics::{NonNegative, font as generics};
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use crate::values::specified::font::{
     self as specified, KeywordInfo, MAX_FONT_WEIGHT, MIN_FONT_WEIGHT,
 };
 use crate::values::specified::length::{FontBaseSize, LineHeightBase};
-use crate::values::CSSInteger;
-use crate::Atom;
-use cssparser::{match_ignore_ascii_case, serialize_identifier, CssStringWriter, Parser};
+use cssparser::{CssStringWriter, Parser, match_ignore_ascii_case, serialize_identifier};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use num_traits::abs;
 use num_traits::cast::AsPrimitive;
@@ -32,14 +32,14 @@ use style_traits::{CssWriter, ParseError, ToCss};
 use thin_vec::ThinVec;
 
 pub use crate::values::computed::Length as MozScriptMinSize;
+pub use crate::values::specified::Integer as SpecifiedInteger;
+pub use crate::values::specified::Number as SpecifiedNumber;
 pub use crate::values::specified::font::MozScriptSizeMultiplier;
 pub use crate::values::specified::font::{FontPalette, FontSynthesis, FontSynthesisStyle};
 pub use crate::values::specified::font::{
     FontVariantAlternates, FontVariantEastAsian, FontVariantLigatures, FontVariantNumeric,
     QueryFontMetricsFlags, XLang, XTextScale,
 };
-pub use crate::values::specified::Integer as SpecifiedInteger;
-pub use crate::values::specified::Number as SpecifiedNumber;
 
 /// Generic template for font property type classes that use a fixed-point
 /// internal representation with `FRACTION_BITS` for the fractional part.
@@ -558,6 +558,12 @@ impl ToCss for FamilyName {
                 write!(CssStringWriter::new(dest), "{}", self.name)?;
                 dest.write_char('"')
             },
+            #[cfg(feature = "servo")]
+            FontFamilyNameSyntax::Generic => {
+                dest.write_str("generic(")?;
+                serialize_identifier(&self.name, dest)?;
+                dest.write_char(')')
+            },
             FontFamilyNameSyntax::Identifiers => {
                 let mut first = true;
                 for ident in self.name.to_string().split(' ') {
@@ -594,13 +600,17 @@ impl ToCss for FamilyName {
     ToResolvedValue,
     ToShmem,
 )]
-/// Font family names must either be given quoted as strings,
-/// or unquoted as a sequence of one or more identifiers.
+/// Font family names can be quoted strings, unquoted identifiers, or (on
+/// Servo) one of the supported CSS Fonts 4 `generic()` forms.
 #[repr(u8)]
 pub enum FontFamilyNameSyntax {
     /// The family name was specified in a quoted form, e.g. "Font Name"
     /// or 'Font Name'.
     Quoted,
+
+    /// The family name was specified as a CSS Fonts 4 generic() function.
+    #[cfg(feature = "servo")]
+    Generic,
 
     /// The family name was specified in an unquoted form as a sequence of
     /// identifiers.
@@ -704,6 +714,48 @@ impl GenericFontFamily {
     }
 }
 
+#[cfg(feature = "servo")]
+fn parse_generic_family_function(input: &mut Parser) -> Result<&'static str, ParseError> {
+    input.expect_function_matching("generic")?;
+    input.parse_nested_block(|input| -> Result<&'static str, ParseError> {
+        if input
+            .try_parse(|input| input.expect_ident_matching("kai"))
+            .is_ok()
+        {
+            return Ok("kai");
+        }
+        input.expect_ident_matching("fangsong")?;
+        Ok("fangsong")
+    })
+}
+
+#[cfg(all(test, feature = "servo"))]
+mod generic_family_function_tests {
+    use super::*;
+
+    #[test]
+    fn parses_supported_generic_family_functions() {
+        for (css, expected) in [("generic(kai)", "kai"), ("generic(fangsong)", "fangsong")] {
+            let mut input = Parser::new(css);
+            assert_eq!(
+                input.parse_entirely(parse_generic_family_function).unwrap(),
+                expected
+            );
+            let family = FamilyName {
+                name: Atom::from(expected),
+                syntax: FontFamilyNameSyntax::Generic,
+            };
+            assert_eq!(family.to_css_string(), css);
+        }
+    }
+
+    #[test]
+    fn bare_fangsong_is_not_the_generic_function_syntax() {
+        let mut input = Parser::new("fangsong");
+        assert!(input.parse_entirely(parse_generic_family_function).is_err());
+    }
+}
+
 impl Parse for SingleFontFamily {
     /// Parse a font-family value.
     fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
@@ -711,6 +763,14 @@ impl Parse for SingleFontFamily {
             return Ok(SingleFontFamily::FamilyName(FamilyName {
                 name: Atom::from(&*value),
                 syntax: FontFamilyNameSyntax::Quoted,
+            }));
+        }
+
+        #[cfg(feature = "servo")]
+        if let Ok(name) = input.try_parse(parse_generic_family_function) {
+            return Ok(SingleFontFamily::FamilyName(FamilyName {
+                name: Atom::from(name),
+                syntax: FontFamilyNameSyntax::Generic,
             }));
         }
 
