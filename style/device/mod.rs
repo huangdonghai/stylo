@@ -59,6 +59,9 @@ pub struct Device {
     root_font_metrics_ch: AtomicU32,
     /// Ideographic advance measure of the root element, used for ric units in other elements.
     root_font_metrics_ic: AtomicU32,
+    /// Ideographic block-axis advance measure of the root element, used for rih units in other
+    /// elements.
+    root_font_metrics_ih: AtomicU32,
     /// Whether any styles computed in the document relied on the root font-size
     /// by using rem units.
     used_root_font_size: AtomicBool,
@@ -66,7 +69,7 @@ pub struct Device {
     /// by using rlh units.
     used_root_line_height: AtomicBool,
     /// Whether any styles computed in the document relied on the root font metrics
-    /// by using rcap, rch, rex, or ric units. This is a lock instead of an atomic
+    /// by using rcap, rch, rex, ric, or rih units. This is a lock instead of an atomic
     /// in order to prevent concurrent writes to the root font metric values.
     #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Pure stack type")]
     used_root_font_metrics: RwLock<bool>,
@@ -199,6 +202,22 @@ impl Device {
         previous != size
     }
 
+    /// Get the ideographic block-axis advance measure of the root element (for rih)
+    pub fn root_font_metrics_ih(&self) -> Length {
+        self.ensure_root_font_metrics_updated();
+        Length::new(f32::from_bits(
+            self.root_font_metrics_ih.load(Ordering::Relaxed),
+        ))
+    }
+
+    /// Set the ideographic block-axis advance measure of the root element (for rih), in
+    /// zoom-independent CSS pixels.
+    pub fn set_root_font_metrics_ih(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_ih.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
     fn ensure_root_font_metrics_updated(&self) {
         let mut guard = self.used_root_font_metrics.write();
         let previously_computed = mem::replace(&mut *guard, true);
@@ -213,6 +232,7 @@ impl Device {
         let root_style = self.root_style.read();
         let root_effective_zoom = root_style.effective_zoom;
         let root_font_size = (*root_style).get_font().clone_font_size().computed_size();
+        let root_is_text_vertical = root_style.writing_mode.is_text_vertical();
 
         let root_font_metrics = self.query_font_metrics(
             root_style.writing_mode.is_upright(),
@@ -223,6 +243,32 @@ impl Device {
                 | QueryFontMetricsFlags::NEEDS_IC,
             /* track_usage = */ false,
         );
+        // `ic` and `ih` measure opposite axes, so they need their own queries: the `ch` query
+        // above uses the upright orientation, which is neither of them in mixed vertical text.
+        let root_ic_metrics = if root_style.writing_mode.is_upright() == root_is_text_vertical {
+            None
+        } else {
+            Some(self.query_font_metrics(
+                root_is_text_vertical,
+                (*root_style).get_font(),
+                root_font_size,
+                QueryFontMetricsFlags::USE_USER_FONT_SET | QueryFontMetricsFlags::NEEDS_IC,
+                /* track_usage = */ false,
+            ))
+        };
+        let root_ih_metrics = if root_style.writing_mode.is_upright() == !root_is_text_vertical {
+            None
+        } else {
+            Some(self.query_font_metrics(
+                !root_is_text_vertical,
+                (*root_style).get_font(),
+                root_font_size,
+                QueryFontMetricsFlags::USE_USER_FONT_SET | QueryFontMetricsFlags::NEEDS_IC,
+                /* track_usage = */ false,
+            ))
+        };
+        let root_ic_metrics = root_ic_metrics.as_ref().unwrap_or(&root_font_metrics);
+        let root_ih_metrics = root_ih_metrics.as_ref().unwrap_or(&root_font_metrics);
 
         let mut root_font_metrics_changed = false;
         root_font_metrics_changed |= self.set_root_font_metrics_ex(
@@ -242,7 +288,10 @@ impl Device {
             root_effective_zoom.unzoom(root_font_metrics.cap_height_or_default().px()),
         );
         root_font_metrics_changed |= self.set_root_font_metrics_ic(
-            root_effective_zoom.unzoom(root_font_metrics.ic_width_or_default(root_font_size).px()),
+            root_effective_zoom.unzoom(root_ic_metrics.ic_width_or_default(root_font_size).px()),
+        );
+        root_font_metrics_changed |= self.set_root_font_metrics_ih(
+            root_effective_zoom.unzoom(root_ih_metrics.ic_width_or_default(root_font_size).px()),
         );
 
         root_font_metrics_changed

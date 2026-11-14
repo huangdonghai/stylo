@@ -454,6 +454,7 @@ impl<'a> Context<'a> {
                 wm.is_vertical() && wm.is_upright()
             },
             FontMetricsOrientation::MatchContextPreferVertical => wm.is_text_vertical(),
+            FontMetricsOrientation::MatchContextPreferBlock => !wm.is_text_vertical(),
             FontMetricsOrientation::Horizontal => false,
         };
         if !self.in_media_query {

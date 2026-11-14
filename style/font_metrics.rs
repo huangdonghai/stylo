@@ -18,7 +18,8 @@ pub struct FontMetrics {
     pub zero_advance_measure: Option<Length>,
     /// The cap-height of the font.
     pub cap_height: Option<Length>,
-    /// The ideographic-width of the font.
+    /// The ideographic advance measure of the font, along the axis selected by the caller's
+    /// `FontMetricsOrientation`: `ic` reads the inline-axis advance, `ih` the block-axis one.
     pub ic_width: Option<Length>,
     /// The ascent of the font (a value is always available for this).
     pub ascent: Length,
@@ -119,6 +120,14 @@ pub enum FontMetricsOrientation {
     /// Get metrics for horizontal or vertical according to the Context's
     /// writing mode, using vertical metrics for vertical/mixed
     MatchContextPreferVertical,
+    /// Get metrics for horizontal or vertical according to the Context's
+    /// writing mode, choosing the advance along the block axis: the vertical
+    /// advance in horizontal writing modes, the horizontal advance in upright
+    /// vertical ones.
+    ///
+    /// This is this fork's own orientation (the name is ours too); it exists
+    /// for the non-standard `ih` unit.
+    MatchContextPreferBlock,
     /// Force getting horizontal metrics.
     Horizontal,
 }

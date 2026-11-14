@@ -1061,7 +1061,7 @@ pub trait MatchMethods: TElement {
                 );
             }
 
-            // Update root font metrics for rcap, rch, rex, ric units. Since querying
+            // Update root font metrics for rcap, rch, rex, ric, rih units. Since querying
             // font metrics can be an expensive call, they are only updated if these
             // units are used in the document.
             if device.used_root_font_metrics() && device.update_root_font_metrics() {

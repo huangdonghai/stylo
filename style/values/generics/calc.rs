@@ -192,6 +192,7 @@ pub enum SortKey {
     Em,
     Ex,
     Ic,
+    Ih,
     Lh,
     Lvb,
     Lvh,
@@ -206,6 +207,7 @@ pub enum SortKey {
     Rem,
     Rex,
     Ric,
+    Rih,
     Rlh,
     S, // Sec
     Svb,

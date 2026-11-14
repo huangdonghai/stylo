@@ -85,6 +85,8 @@ pub enum LengthUnit {
     Rcap,
     Ic,
     Ric,
+    Ih,
+    Rih,
     Rem,
     Lh,
     Rlh,
@@ -158,6 +160,8 @@ impl LengthUnit {
             "rcap" if allows_computational_dependence => Self::Rcap,
             "ic" if allows_computational_dependence => Self::Ic,
             "ric" if allows_computational_dependence => Self::Ric,
+            "ih" if allows_computational_dependence => Self::Ih,
+            "rih" if allows_computational_dependence => Self::Rih,
             "rem" if allows_computational_dependence => Self::Rem,
             "lh" if allows_computational_dependence => Self::Lh,
             "rlh" if allows_computational_dependence => Self::Rlh,
@@ -218,6 +222,8 @@ impl LengthUnit {
             Self::Rcap => NoCalcLength::RCAP,
             Self::Ic => NoCalcLength::IC,
             Self::Ric => NoCalcLength::RIC,
+            Self::Ih => NoCalcLength::IH,
+            Self::Rih => NoCalcLength::RIH,
             Self::Rem => NoCalcLength::REM,
             Self::Lh => NoCalcLength::LH,
             Self::Rlh => NoCalcLength::RLH,
@@ -278,6 +284,8 @@ impl LengthUnit {
                 | Self::Rcap
                 | Self::Ic
                 | Self::Ric
+                | Self::Ih
+                | Self::Rih
                 | Self::Rem
                 | Self::Lh
                 | Self::Rlh
@@ -342,6 +350,8 @@ impl LengthUnit {
             Self::Rcap => SortKey::Rcap,
             Self::Ic => SortKey::Ic,
             Self::Ric => SortKey::Ric,
+            Self::Ih => SortKey::Ih,
+            Self::Rih => SortKey::Rih,
             Self::Rem => SortKey::Rem,
             Self::Lh => SortKey::Lh,
             Self::Rlh => SortKey::Rlh,
@@ -472,6 +482,10 @@ impl NoCalcLength {
     pub const IC: &'static str = "ic";
     /// Unit identifier for `ric`.
     pub const RIC: &'static str = "ric";
+    /// Unit identifier for `ih`.
+    pub const IH: &'static str = "ih";
+    /// Unit identifier for `rih`.
+    pub const RIH: &'static str = "rih";
     /// Unit identifier for `rem`.
     pub const REM: &'static str = "rem";
     /// Unit identifier for `lh`.
@@ -758,6 +772,20 @@ impl NoCalcLength {
             metrics.ic_width_or_default(reference_font_size.used_size())
         }
 
+        fn ih_size(
+            context: &Context,
+            base_size: FontBaseSize,
+            reference_font_size: &FontSize,
+        ) -> computed::Length {
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::MatchContextPreferBlock,
+                QueryFontMetricsFlags::NEEDS_IC,
+            );
+            metrics.ic_width_or_default(reference_font_size.used_size())
+        }
+
         context
             .builder
             .add_flags(ComputedValueFlags::USES_FONT_OR_WM_RELATIVE_UNITS);
@@ -807,6 +835,7 @@ impl NoCalcLength {
             LengthUnit::Ch => (ch_size(context, base_size, &reference_font_size), length),
             LengthUnit::Cap => (cap_size(context, base_size), length),
             LengthUnit::Ic => (ic_size(context, base_size, &reference_font_size), length),
+            LengthUnit::Ih => (ih_size(context, base_size, &reference_font_size), length),
             LengthUnit::Rex => {
                 let reference_size = if context.builder.is_root_element || context.in_media_query {
                     ex_size(context, base_size, &reference_font_size)
@@ -847,6 +876,17 @@ impl NoCalcLength {
                     context
                         .device()
                         .root_font_metrics_ic()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            LengthUnit::Rih => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    ih_size(context, base_size, &reference_font_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_ih()
                         .zoom(context.builder.effective_zoom)
                 };
                 (reference_size, length)

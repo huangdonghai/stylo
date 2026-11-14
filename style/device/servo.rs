@@ -103,6 +103,7 @@ impl Device {
             root_font_metrics_cap: AtomicU32::new(FONT_MEDIUM_CAP_PX.to_bits()),
             root_font_metrics_ch: AtomicU32::new(FONT_MEDIUM_CH_PX.to_bits()),
             root_font_metrics_ic: AtomicU32::new(FONT_MEDIUM_IC_PX.to_bits()),
+            root_font_metrics_ih: AtomicU32::new(FONT_MEDIUM_IC_PX.to_bits()),
             used_root_font_size: AtomicBool::new(false),
             used_root_line_height: AtomicBool::new(false),
             used_root_font_metrics: RwLock::new(false),

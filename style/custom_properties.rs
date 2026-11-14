@@ -593,6 +593,7 @@ impl ReferenceFlags {
             || value.eq_ignore_ascii_case(NoCalcLength::CAP)
             || value.eq_ignore_ascii_case(NoCalcLength::CH)
             || value.eq_ignore_ascii_case(NoCalcLength::IC)
+            || value.eq_ignore_ascii_case(NoCalcLength::IH)
         {
             return Self::FONT_UNITS;
         }
@@ -604,6 +605,7 @@ impl ReferenceFlags {
             || value.eq_ignore_ascii_case(NoCalcLength::RCH)
             || value.eq_ignore_ascii_case(NoCalcLength::RCAP)
             || value.eq_ignore_ascii_case(NoCalcLength::RIC)
+            || value.eq_ignore_ascii_case(NoCalcLength::RIH)
         {
             return Self::ROOT_FONT_UNITS;
         }
