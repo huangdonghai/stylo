@@ -359,6 +359,7 @@ allow_quirks = true
 flags = "CAN_ANIMATE_ON_COMPOSITOR"
 servo_restyle_damage = "repaint"
 affects = "paint"
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-image]
 type = "Image"
@@ -370,6 +371,7 @@ animation_type = "discrete"
 ignored_when_colors_disabled = true
 servo_restyle_damage = "repaint"
 affects = "paint"
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-position-x]
 type = "position::HorizontalPosition"
@@ -381,6 +383,7 @@ spec = "https://drafts.csswg.org/css-backgrounds-4/#propdef-background-position-
 vector = { animation_type = "repeatable_list" }
 servo_restyle_damage = "repaint"
 affects = "paint"
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-position-y]
 type = "position::VerticalPosition"
@@ -392,6 +395,7 @@ spec = "https://drafts.csswg.org/css-backgrounds-4/#propdef-background-position-
 vector = { animation_type = "repeatable_list" }
 servo_restyle_damage = "repaint"
 affects = "paint"
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-repeat]
 type = "BackgroundRepeat"
@@ -402,6 +406,7 @@ vector = {}
 spec = "https://drafts.csswg.org/css-backgrounds/#the-background-repeat"
 servo_restyle_damage = "repaint"
 affects = "paint"
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-size]
 type = "BackgroundSize"
@@ -412,6 +417,7 @@ vector = { animation_type = "repeatable_list" }
 extra_prefixes = ["webkit"]
 servo_restyle_damage = "repaint"
 affects = "paint"
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [baseline-shift]
 type = "BaselineShift"
@@ -3669,6 +3675,7 @@ affects = "paint"
 servo_restyle_damage = "repaint"
 vector = {}
 keyword = { values = ["scroll", "fixed"], extra_gecko_values = ["local"], gecko_enum_prefix = "StyleImageLayerAttachment" }
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-clip]
 type = "BackgroundClip"
@@ -3681,6 +3688,7 @@ affects = "paint"
 extra_prefixes = ["webkit"]
 servo_restyle_damage = "repaint"
 vector = {}
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-origin]
 struct = "background"
@@ -3691,6 +3699,7 @@ extra_prefixes = ["webkit"]
 servo_restyle_damage = "repaint"
 vector = {}
 keyword = { values = ["padding-box", "border-box", "content-box"], gecko_enum_prefix = "StyleGeometryBox", gecko_inexhaustive = true }
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-blend-mode]
 struct = "background"
@@ -3699,6 +3708,7 @@ animation_type = "discrete"
 spec = "https://drafts.fxtf.org/compositing/#background-blend-mode"
 affects = "paint"
 servo_restyle_damage = "repaint"
+rule_types_allowed = ["style", "keyframe", "page", "scope"]
 
 [background-blend-mode.keyword]
 values = [
